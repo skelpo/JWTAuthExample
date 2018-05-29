@@ -7,7 +7,7 @@ public func routes(_ router: Router) throws {
     router.get("hello") { req in
         return "Hello, world!"
     }
-    // This simple validates the reponse, no payload data is used
+    // This simple validates the request, no payload data is used
     let protected = router.grouped(JWTVerificationMiddleware()).grouped("protected")
     protected.get("test") { req in
         return "You need to have a valid JWT for this!"
