@@ -1,5 +1,6 @@
 import FluentSQLite
 import Vapor
+import JWTMiddleware
 
 /// Called before your application initializes.
 public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
@@ -10,6 +11,15 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     let router = EngineRouter.default()
     try routes(router)
     services.register(router, as: Router.self)
+    
+    /// We need this for the JWTProvider
+    try services.register(StorageProvider())
+    
+    /// Adding the JWTProvider for us to validate JWTs
+    try services.register(JWTProvider { n in
+        let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"]) // change as needed
+        return try RSAService(n: n, e: "AQAB", header: headers)
+    })
 
     /// Register middleware
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
