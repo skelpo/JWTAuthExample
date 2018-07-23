@@ -19,8 +19,26 @@ public func routes(_ router: Router) throws {
         let payload:Payload = try req.get("skelpo-payload")!
         // You can now use the payload and do with it whatever you like.
         // For example you can use the user id to load related data or save data.
-        return "This is the ID from the JWT: \(payload.id)"
+        return "This is the email from the JWT: \(payload.email)"
     }
+    
+    
+    router.get("jwt") { req -> String in
+        
+        // here we create a payload for our JWT
+        let payload1 = Payload(exp: 10000000000, iat: 100, email: "email@email.email", id: 1)
+        
+        // instantiate a JWT service so we can sign the token with our keys which are in Environment
+        //variable
+        let signer = try req.make(JWTService.self)
+        
+        //We sign a JWT
+        let signedJWT = try signer.sign(payload1)
+        // return the acctual JWT
+        return "This is the ID from the JWT: \(signedJWT)"
+    }
+    
+
 
     // Example of configuring a controller
     let todoController = TodoController()
