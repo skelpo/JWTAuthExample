@@ -7,8 +7,8 @@ In this project you can see an example implementation of [JWTMiddleware](https:/
 You will need to add the following two packages to your `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/vapor/jwt.git", from: "3.0.0-rc"),
-.package(url: "https://github.com/skelpo/JWTMiddleware.git", from: "0.6.1"),
+.package(url: "https://github.com/vapor/jwt.git", from: "3.1.0"),
+.package(url: "https://github.com/skelpo/JWTMiddleware.git", from: "0.8.1"),
 ```
 
 And add `JWTMiddleware` as well as `JWT` to all the target dependency arrays you want to access the package in.
@@ -23,10 +23,12 @@ You will need to register two services in your `configure.swift`:
 /// We need this for the JWTProvider, coming from Vapor
 try services.register(StorageProvider())
 /// Adding the JWTProvider for us to validate JWTs
-try services.register(JWTProvider { n in
-    let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"]) // change as needed
-    return try RSAService(n: n, e: "AQAB", header: headers
-)})
+try services.register(JWTProvider { n, d in
+guard let d = d else { throw Abort(.internalServerError, reason: "Could not find environment variable 'JWT_SECRET'", identifier: "missingEnvVar") }
+
+let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"], kid: "")
+return try RSAService(n: n, e: "AQAB", d: d, header: headers)
+})
 ```
 
 ## Models
@@ -48,9 +50,9 @@ struct Payload: IdentifiableJWTPayload {
     let id: Int
     
     
-    func verify() throws {
+    func verify(using signer: JWTSigner) throws {
         let expiration = Date(timeIntervalSince1970: self.exp)
-        try ExpirationClaim(value: expiration).verify()
+        try ExpirationClaim(value: expiration).verifyNotExpired()
     }
 }
 ```
