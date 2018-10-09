@@ -16,12 +16,12 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     try services.register(StorageProvider())
     
     /// Adding the JWTProvider for us to validate JWTs
-    try services.register(JWTProvider { n, d in
-        guard let d = d else { throw Abort(.internalServerError, reason: "Could not find environment variable 'JWT_SECRET'", identifier: "missingEnvVar") }
-        
-        let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"], kid: "")
-        return try RSAService(n: n, e: "AQAB", d: d, header: headers)
+    try services.register(JWTProvider { _ , pem  in
+        guard let pem = pem else { throw Abort(.internalServerError, reason: "Could not find environment variable 'JWT_SECRET'", identifier: "missingEnvVar") }
+        let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"], kid: "user_manager_kid")
+        return try RSAService(pem: pem, header: headers, type: .private, algorithm: .sha512)
     })
+
 
     /// Register middleware
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
